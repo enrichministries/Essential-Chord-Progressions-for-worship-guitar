@@ -95,20 +95,22 @@
             padding-right: 2rem;
         }
 
-        /* Chord Grid - Single Line Layout */
+        /* Chord Grid - Horizontal Layout */
         .chord-container {
             display: flex;
-            flex-direction: row;
-            flex-wrap: nowrap; /* Forces single line */
-            justify-content: space-between;
-            gap: 8px;
-            overflow: hidden; /* Prevents overflow if screen is very small */
+            flex-direction: row; /* Horizontal */
+            flex-wrap: nowrap; /* Force straight line */
+            justify-content: space-around; /* Even spacing */
+            align-items: center;
+            gap: 16px; 
+            overflow-x: auto; /* Allow scrolling on extremely small screens */
+            padding: 10px 0;
         }
         
         .chord-item {
-            flex: 1; /* Distribute space evenly */
-            min-width: 0; /* Allow shrinking */
-            max-width: 70px; /* Optimal size */
+            flex: 1;
+            min-width: 80px; /* Minimum readable size */
+            max-width: 140px; /* Optimal max size */
         }
     </style>
 </head>
@@ -180,9 +182,9 @@
         </div>
     </div>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="cardGrid">
+    <!-- Main Content (Single Column) -->
+    <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div class="grid grid-cols-1 gap-8" id="cardGrid">
             <!-- Cards injected via JS -->
         </div>
     </main>
@@ -200,7 +202,8 @@
             primary: '#e6b05e', // Gold Accent
             muted: 'rgba(234, 227, 202, 0.4)', // Muted Cream
             text: 'rgb(234, 227, 202)', // Cream
-            panel: 'rgba(234, 227, 202, 0.1)'
+            panel: 'rgba(234, 227, 202, 0.1)',
+            dotText: 'rgb(34, 43, 28)' // Forest Green for text inside dots
         };
 
         // --- DATA & STATE ---
@@ -522,18 +525,34 @@
                 let opacity = i===0 && startFret===1 ? '0.8' : '0.5';
                 svg += `<line x1="${mx}" y1="${my + i*fretSpace}" x2="${width-mx}" y2="${my + i*fretSpace}" stroke="${stroke}" stroke-width="${sw}" stroke-opacity="${opacity}"/>`;
             }
+            
+            // Standard E Tuning Indices
+            const tuningIndices = [4, 9, 2, 7, 11, 4]; // E A D G B e
+
             visualPositions.forEach((pos, strIdx) => {
                 const x = mx + strIdx * stringSpace;
+                
+                // Calculate Note Name
+                let noteName = "";
+                if (pos !== 'x') {
+                     // Get Absolute Fret from original array (positions)
+                     const absFret = positions[strIdx];
+                     const noteIndex = (tuningIndices[strIdx] + absFret) % 12;
+                     noteName = NOTES[noteIndex];
+                }
+
                 if (pos === 'x') {
                     // Mute: Bolder
                     svg += `<text x="${x}" y="${my-2}" font-family="sans-serif" font-size="7" fill="${COLORS.text}" fill-opacity="0.7" text-anchor="middle" font-weight="bold">×</text>`;
                 } else if (pos === 0 && startFret === 1) {
-                    // Open: Thicker stroke
-                    svg += `<circle cx="${x}" cy="${my-3}" r="2" stroke="${COLORS.primary}" stroke-width="1.5" fill="none"/>`;
+                    // Open: Filled to show text
+                    svg += `<circle cx="${x}" cy="${my-3}" r="4.5" fill="${COLORS.primary}" />`;
+                    svg += `<text x="${x}" y="${my-3+1.5}" font-family="sans-serif" font-size="4" fill="${COLORS.dotText}" text-anchor="middle" font-weight="900">${noteName}</text>`;
                 } else {
                     // Finger: Larger radius
                     const y = my + (pos * fretSpace) - (fretSpace/2);
-                    svg += `<circle cx="${x}" cy="${y}" r="3.2" fill="${COLORS.primary}"/>`;
+                    svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.primary}"/>`;
+                    svg += `<text x="${x}" y="${y+1.5}" font-family="sans-serif" font-size="4" fill="${COLORS.dotText}" text-anchor="middle" font-weight="900">${noteName}</text>`;
                 }
             });
             if (startFret > 1) {
